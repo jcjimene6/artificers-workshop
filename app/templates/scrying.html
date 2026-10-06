@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}Scrying Chamber{% endblock %}
+
+{% block content %}
+<h2>&#128302; Scrying Chamber</h2>
+<p class="muted" style="margin-bottom:1.5rem;">
+  Infrastructure health at a glance.
+  Queried {{ now.strftime('%Y-%m-%d %H:%M:%S') }} UTC.
+</p>
+
+<div class="panel">
+  <table style="width:100%;">
+    <thead>
+      <tr>
+        <th>Component</th>
+        <th>Fantasy Name</th>
+        <th>Status</th>
+        <th>Detail</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Web App</td>
+        <td>The Workshop</td>
+        <td>
+          <span class="badge badge-complete">healthy</span>
+        </td>
+        <td class="muted">This page loaded.</td>
+      </tr>
+      <tr>
+        <td>PostgreSQL</td>
+        <td>The Grand Archive</td>
+        <td>
+          {% if archive_status == 'healthy' %}
+          <span class="badge badge-complete">healthy</span>
+          {% else %}
+          <span class="badge badge-failed">unreachable</span>
+          {% endif %}
+        </td>
+        <td class="muted">{{ archive_status }}</td>
+      </tr>
+      <tr>
+        <td>Job Queue</td>
+        <td>Courier Guild</td>
+        <td>
+          {% if pending_jobs == 0 %}
+          <span class="badge badge-complete">clear</span>
+          {% elif pending_jobs < 5 %}
+          <span class="badge badge-testing">{{ pending_jobs }} pending</span>
+          {% else %}
+          <span class="badge badge-failed">
+            {{ pending_jobs }} backed up
+          </span>
+          {% endif %}
+        </td>
+        <td class="muted">
+          {{ pending_jobs }} enchantment job(s) awaiting processing
+        </td>
+      </tr>
+      <tr>
+        <td>Background Worker</td>
+        <td>Artificer Worker</td>
+        <td>
+          {% if last_job %}
+            {% set age = (now - last_job.processed_at).total_seconds() %}
+            {% if age < 300 %}
+            <span class="badge badge-complete">active</span>
+            {% elif age < 900 %}
+            <span class="badge badge-testing">idle</span>
+            {% else %}
+            <span class="badge badge-failed">possibly down</span>
+            {% endif %}
+          {% else %}
+          <span class="badge badge-pending">no data</span>
+          {% endif %}
+        </td>
+        <td class="muted">
+          {% if last_job %}
+            Last enchantment:
+            {{ last_job.processed_at.strftime('%Y-%m-%d %H:%M:%S') }}
+            UTC
+          {% else %}
+            No completed enchantments yet.
+          {% endif %}
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<p class="muted" style="font-size:0.8rem; margin-top:1rem;">
+  Worker status is inferred from last enchantment time.
+  A proper liveness probe is wired in the k8s manifests.
+</p>
+{% endblock %}

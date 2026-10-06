@@ -1,0 +1,31 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: enchanter
+  namespace: workshop
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: enchanter
+  template:
+    metadata:
+      labels:
+        app: enchanter
+    spec:
+      containers:
+        - name: enchanter
+          image: workshop-worker:latest
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: workshop-config
+          # No HTTP port — worker has no web interface.
+          # Liveness: worker is alive if the process is running.
+          # Kill this pod to trigger failure mode #2.
+          livenessProbe:
+            exec:
+              command: ["pgrep", "-f", "enchanter"]
+            initialDelaySeconds: 10
+            periodSeconds: 15

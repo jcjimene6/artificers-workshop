@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}Commission #{{ commission.id }}{% endblock %}
+
+{% block content %}
+<p class="muted">
+  <a href="/">&#8592; Workshop</a>
+</p>
+
+<div class="panel" style="margin-top:1rem;">
+  <h2 style="margin-bottom:0.5rem;">{{ commission.title }}</h2>
+  <p>
+    <strong>Patron:</strong> {{ commission.patron }} &nbsp;|&nbsp;
+    <strong>Discipline:</strong> {{ commission.discipline }}
+  </p>
+  <p style="margin-top:0.5rem;">{{ commission.description }}</p>
+  <p style="margin-top:0.75rem;">
+    <span class="badge badge-{{ commission.status }}">
+      {{ commission.status }}
+    </span>
+    <span class="muted" style="margin-left:1rem;">
+      Received {{ commission.created_at.strftime('%Y-%m-%d %H:%M') }}
+      UTC &mdash;
+      Updated {{ commission.updated_at.strftime('%Y-%m-%d %H:%M') }}
+      UTC
+    </span>
+  </p>
+</div>
+
+<!-- Status update -->
+<div class="panel">
+  <h2>Advance Status</h2>
+  <form action="/commissions/{{ commission.id }}/status"
+        method="post"
+        style="display:flex; gap:0.75rem; align-items:flex-end;">
+    <div style="flex:1;">
+      <label>New Status</label>
+      <select name="status">
+        {% for s in valid_statuses %}
+        <option value="{{ s }}"
+          {% if s == commission.status %}selected{% endif %}>
+          {{ s }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit">Update</button>
+  </form>
+  {% if commission.status == 'complete' %}
+  <p class="muted" style="margin-top:0.5rem;">
+    Marked complete — an enchantment job has been enqueued.
+  </p>
+  {% endif %}
+</div>
+
+<!-- Enchantment jobs -->
+{% if commission.jobs %}
+<div class="panel">
+  <h2>Enchantment Jobs</h2>
+  {% for job in commission.jobs %}
+  <p>
+    <span class="badge badge-{{ job.status }}">{{ job.status }}</span>
+    {% if job.artifact_id %}
+      &nbsp; Artifact: <code>{{ job.artifact_id }}</code>
+    {% endif %}
+    {% if job.processed_at %}
+      <span class="muted">
+        &mdash; sealed {{ job.processed_at.strftime('%H:%M:%S') }}
+        UTC
+      </span>
+    {% endif %}
+  </p>
+  {% if job.report %}
+  <p class="muted" style="margin-top:0.25rem; margin-left:1rem;">
+    {{ job.report }}
+  </p>
+  {% endif %}
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- Workshop notes -->
+<div class="panel">
+  <h2>Workshop Notes</h2>
+  {% if commission.notes %}
+    {% for note in commission.notes %}
+    <p style="margin-bottom:0.5rem;">
+      {{ note.body }}
+      <span class="muted">
+        &mdash; {{ note.created_at.strftime('%Y-%m-%d %H:%M') }} UTC
+      </span>
+    </p>
+    {% endfor %}
+  {% else %}
+    <p class="muted">No notes yet.</p>
+  {% endif %}
+
+  <form action="/commissions/{{ commission.id }}/notes"
+        method="post"
+        style="margin-top:1rem;">
+    <label>Add a note</label>
+    <textarea name="body" required
+      placeholder="Crystal resonance tested at 4th bell. Signal holds.">
+    </textarea>
+    <button type="submit">Add Note</button>
+  </form>
+</div>
+{% endblock %}

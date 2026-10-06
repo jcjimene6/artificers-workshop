@@ -1,0 +1,62 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: workshop
+  namespace: workshop
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: workshop
+  template:
+    metadata:
+      labels:
+        app: workshop
+    spec:
+      initContainers:
+        # Runs alembic upgrade head before the app starts.
+        # If migration fails, the pod never reaches Running.
+        # That is failure mode #4 made visible.
+        - name: migrate
+          image: workshop-app:latest
+          imagePullPolicy: IfNotPresent
+          command: ["alembic", "upgrade", "head"]
+          envFrom:
+            - configMapRef:
+                name: workshop-config
+      containers:
+        - name: workshop
+          image: workshop-app:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: workshop-config
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: workshop-service
+  namespace: workshop
+spec:
+  selector:
+    app: workshop
+  ports:
+    - port: 80
+      targetPort: 8000
+  type: ClusterIP

@@ -1,0 +1,86 @@
+---
+# Create the secret manually before applying:
+# kubectl create secret generic postgres-secret \
+#   --from-literal=POSTGRES_PASSWORD=workshop \
+#   -n workshop
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres-secret
+  namespace: workshop
+type: Opaque
+stringData:
+  POSTGRES_PASSWORD: workshop
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+  namespace: workshop
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: workshop
+spec:
+  serviceName: postgres-service
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:15-alpine
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              value: workshop
+            - name: POSTGRES_DB
+              value: workshop
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_PASSWORD
+          volumeMounts:
+            - name: postgres-storage
+              mountPath: /var/lib/postgresql/data
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "workshop"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      volumes:
+        - name: postgres-storage
+          persistentVolumeClaim:
+            claimName: postgres-pvc
+
+---
+# App connects to postgres-service:5432 via CoreDNS.
+# Delete this Service and failure mode #5 fires immediately.
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+  namespace: workshop
+spec:
+  selector:
+    app: postgres
+  ports:
+    - port: 5432
+      targetPort: 5432

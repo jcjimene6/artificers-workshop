@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: workshop-config
+  namespace: workshop
+data:
+  # Service name resolves via CoreDNS within the namespace.
+  # If this breaks, failure mode #5 is live.
+  DATABASE_URL: >-
+    postgresql://workshop:workshop@postgres-service:5432/workshop
+  POLL_INTERVAL: "5"

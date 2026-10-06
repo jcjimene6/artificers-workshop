@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Workshop — Commissions{% endblock %}
+
+{% block content %}
+<h2>Active Commissions</h2>
+
+{% if commissions %}
+<table>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Title</th>
+      <th>Patron</th>
+      <th>Discipline</th>
+      <th>Status</th>
+      <th>Received</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for c in commissions %}
+    <tr>
+      <td>{{ c.id }}</td>
+      <td><a href="/commissions/{{ c.id }}">{{ c.title }}</a></td>
+      <td>{{ c.patron }}</td>
+      <td>{{ c.discipline }}</td>
+      <td>
+        <span class="badge badge-{{ c.status }}">
+          {{ c.status }}
+        </span>
+      </td>
+      <td class="muted">
+        {{ c.created_at.strftime('%Y-%m-%d') }}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="muted">
+  The workshop is quiet. No commissions yet.
+</p>
+{% endif %}
+
+<hr style="border-color:#2a1f0a; margin:2rem 0;">
+
+<h2>Submit a New Commission</h2>
+<form action="/commissions" method="post">
+  <label>Patron</label>
+  <input name="patron" required placeholder="Guild of Cartographers">
+
+  <label>Discipline</label>
+  <select name="discipline" required>
+    <option value="">-- choose --</option>
+    <option>Infrastructure</option>
+    <option>Enchantment</option>
+    <option>Alchemy</option>
+    <option>Artifice</option>
+    <option>Cartography</option>
+    <option>Other</option>
+  </select>
+
+  <label>Title</label>
+  <input name="title" required
+    placeholder="Repair the Western Watchtower">
+
+  <label>Description</label>
+  <textarea name="description" required
+    placeholder="The communication crystal loses contact during storms.">
+  </textarea>
+
+  <button type="submit">Submit Commission</button>
+</form>
+{% endblock %}
